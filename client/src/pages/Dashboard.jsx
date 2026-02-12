@@ -1,40 +1,65 @@
 import { useEffect, useState } from "react";
-import { getSessions } from "../utils/storage";
+import Sidebar from "../Components/Sidebar";
+
+const API = import.meta.env.VITE_API_URL;
 
 export default function Dashboard() {
-  const [sessions, setSessions] = useState([]);
+  const [data, setData] = useState([]);
 
-  useEffect(() => {
-    setSessions(getSessions());
-  }, []);
+  const load = () => {
+    fetch(API + "/tasks")
+      .then(res => res.json())
+      .then(setData);
+  };
 
-  const totalHours = sessions.reduce((sum, s) => sum + s.hours, 0);
+  useEffect(load, []);
+
+  const totalHours = data.reduce((sum, t) => sum + Number(t.hours || 0), 0);
+  const goal = 20;
+  const progress = Math.min((totalHours / goal) * 100, 100);
 
   return (
-    <div className="main">
-      <h2>Dashboard</h2>
+    <>
+      <Sidebar />
+      <div className="main">
+        <h2>Dashboard</h2>
 
-      <div className="stat-grid">
-        <div className="stat-card">
-          <h3>Total Hours</h3>
-          <h1>{totalHours}</h1>
-        </div>
-
-        <div className="stat-card">
-          <h3>Sessions</h3>
-          <h1>{sessions.length}</h1>
-        </div>
-      </div>
-
-      {sessions.length === 0 ? (
-        <p className="empty">No sessions yet</p>
-      ) : (
-        sessions.map((s) => (
-          <div key={s.id} className="card">
-            <b>{s.subject}</b> – {s.topic} ({s.hours} hrs)
+        <div className="stat-grid">
+          <div className="stat-card">
+            <h3>Total Hours</h3>
+            <h1>{totalHours}</h1>
           </div>
-        ))
-      )}
-    </div>
+
+          <div className="stat-card">
+            <h3>Sessions</h3>
+            <h1>{data.length}</h1>
+          </div>
+
+          <div className="stat-card">
+            <h3>Weekly Goal</h3>
+            <div
+              className="progress-circle"
+              style={{ "--progress": progress + "%" }}
+            >
+              {Math.round(progress)}%
+            </div>
+          </div>
+        </div>
+
+        {data.length === 0 ? (
+          <div className="empty">
+            <h3>No sessions yet</h3>
+          </div>
+        ) : (
+          data.map(t => (
+            <div className="card" key={t.id}>
+              <h3>{t.subject}</h3>
+              <p>{t.topic}</p>
+              <p>{t.hours} hrs</p>
+            </div>
+          ))
+        )}
+      </div>
+    </>
   );
 }

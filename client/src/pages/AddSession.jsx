@@ -1,55 +1,39 @@
 import { useState } from "react";
-import { saveSession } from "../utils/storage";
+import Sidebar from "../Components/Sidebar";
+
+const API = import.meta.env.VITE_API_URL;
 
 export default function AddSession() {
   const [subject, setSubject] = useState("");
   const [topic, setTopic] = useState("");
   const [hours, setHours] = useState("");
+  const [toast, setToast] = useState(false);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const save = () => {
+    fetch(API + "/tasks", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ subject, topic, hours })
+    });
 
-    const newSession = {
-      id: Date.now(),
-      subject,
-      topic,
-      hours: Number(hours)
-    };
-
-    saveSession(newSession);
-
-    alert("Session Added!");
-
-    setSubject("");
-    setTopic("");
-    setHours("");
+    setToast(true);
+    setTimeout(() => setToast(false), 2000);
   };
 
   return (
-    <div className="main">
-      <h2>Add Study Session</h2>
-      <form onSubmit={handleSubmit} className="card">
-        <input
-          placeholder="Subject"
-          value={subject}
-          onChange={(e) => setSubject(e.target.value)}
-          required
-        />
-        <input
-          placeholder="Topic"
-          value={topic}
-          onChange={(e) => setTopic(e.target.value)}
-          required
-        />
-        <input
-          type="number"
-          placeholder="Hours"
-          value={hours}
-          onChange={(e) => setHours(e.target.value)}
-          required
-        />
-        <button type="submit">Save</button>
-      </form>
-    </div>
+    <>
+      <Sidebar />
+      <div className="main">
+        <div className="card">
+          <h2>Add Study Session</h2>
+          <input placeholder="Subject" onChange={e=>setSubject(e.target.value)} />
+          <input placeholder="Topic" onChange={e=>setTopic(e.target.value)} />
+          <input type="number" placeholder="Hours" onChange={e=>setHours(e.target.value)} />
+          <button onClick={save}>Save</button>
+        </div>
+      </div>
+
+      {toast && <div className="toast">Session Added ✓</div>}
+    </>
   );
 }
