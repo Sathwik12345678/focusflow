@@ -1,67 +1,56 @@
 import { useEffect, useState } from "react";
-import Sidebar from "../Components/Sidebar";
-import { Line } from "react-chartjs-2";
-import "chart.js/auto";
-
-const API = import.meta.env.VITE_API_URL;
+import { getSessions } from "../utils/storage";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer
+} from "recharts";
 
 export default function Analytics() {
   const [data, setData] = useState([]);
 
   useEffect(() => {
-    fetch(API + "/tasks")
-      .then(res => res.json())
-      .then(setData);
+    const sessions = getSessions();
+
+    const grouped = {};
+    sessions.forEach((s) => {
+      grouped[s.subject] = (grouped[s.subject] || 0) + s.hours;
+    });
+
+    const chartData = Object.keys(grouped).map((key) => ({
+      subject: key,
+      hours: grouped[key]
+    }));
+
+    setData(chartData);
   }, []);
 
-  // Group by subject
-  const subjectData = {};
-  data.forEach(t => {
-    subjectData[t.subject] =
-      (subjectData[t.subject] || 0) + Number(t.hours || 0);
-  });
-
-  const chartData = {
-    labels: Object.keys(subjectData),
-    datasets: [
-      {
-        label: "Study Hours",
-        data: Object.values(subjectData),
-        borderColor: "#06b6d4",
-        backgroundColor: "rgba(6,182,212,0.2)",
-        tension: 0.4,
-        fill: true
-      }
-    ]
-  };
-
-  const options = {
-    plugins: {
-      legend: {
-        labels: {
-          color: "white"
-        }
-      }
-    },
-    scales: {
-      x: {
-        ticks: { color: "white" }
-      },
-      y: {
-        ticks: { color: "white" }
-      }
-    }
-  };
-
   return (
-    <>
-      <Sidebar />
-      <div className="main">
-        <div className="card">
-          <h2>Study Trends</h2>
-          <Line data={chartData} options={options} />
+    <div className="main">
+      <h2>Study Analytics</h2>
+
+      {data.length === 0 ? (
+        <p className="empty">No data to show</p>
+      ) : (
+        <div className="card" style={{ height: 300 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={data}>
+              <XAxis dataKey="subject" />
+              <YAxis />
+              <Tooltip />
+              <Line
+                type="monotone"
+                dataKey="hours"
+                stroke="#38bdf8"
+                strokeWidth={3}
+              />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
-      </div>
-    </>
+      )}
+    </div>
   );
 }
